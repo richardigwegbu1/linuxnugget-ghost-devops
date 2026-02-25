@@ -1,0 +1,68 @@
+services:
+  db:
+    image: mysql:8
+    container_name: ghost-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghostpassword
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - ghost-net
+
+  ghost:
+    image: ghost:5-alpine
+    container_name: ghost-app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ghost
+      database__connection__password: ghostpassword
+      database__connection__database: ghost
+      url: https://linuxnugget.com
+    volumes:
+      - ghost_data:/var/lib/ghost/content
+    networks:
+      - ghost-net
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: ghost-nginx
+    restart: always
+    depends_on:
+      - ghost
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    networks:
+      - ghost-net
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: ghost-certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    depends_on:
+      - nginx
+    networks:
+      - ghost-net
+
+volumes:
+  db_data:
+  ghost_data:
+  certbot_www:
+  letsencrypt:
+
+networks:
+  ghost-net:
