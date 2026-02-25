@@ -1,0 +1,4 @@
+# Force LF for Linux deploy/config files
+deploy/* text eol=lf
+terraform/* text eol=lf
+*.sh text eol=lf
